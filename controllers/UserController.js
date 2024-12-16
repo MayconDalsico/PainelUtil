@@ -45,15 +45,17 @@ class UserController {
 
           user.loadFromJSON(result);
 
+          user.save();
+
           this.getTr(user, tr);
 
           this.updateCount();
 
           this.formUpdateEl.reset();
 
-          this.showPanelCreate();
-
           btn.disabled = false;
+
+          this.showPanelCreate();
         },
         (e) => {
           console.error(e);
@@ -78,7 +80,7 @@ class UserController {
         (content) => {
           values.photo = content;
 
-          this.insert(values);
+          values.save();
 
           this.addLine(values);
 
@@ -134,7 +136,7 @@ class UserController {
         isValid = false;
       }
 
-      if (field.name === "gender") {
+      if (field.name == "gender") {
         if (field.checked) {
           user[field.name] = field.value;
         }
@@ -161,18 +163,8 @@ class UserController {
     );
   }
 
-  getusersStorage() {
-    let users = [];
-
-    if (localStorage.getItem("users")) {
-      users = JSON.parse(localStorage.getItem("users"));
-    }
-
-    return users;
-  }
-
   selectAll() {
-    let users = this.getusersStorage();
+    let users = User.getUsersStorage();
 
     users.forEach((dataUser) => {
       let user = new User();
@@ -181,15 +173,6 @@ class UserController {
 
       this.addLine(user);
     });
-  }
-
-  insert(data) {
-    let users = this.getusersStorage();
-
-    users.push(data);
-
-    // sessionStorage.setItem("users", JSON.stringify(users));
-    localStorage.setItem("users", JSON.stringify(users));
   }
 
   addLine(dataUser) {
@@ -206,16 +189,18 @@ class UserController {
     tr.dataset.user = JSON.stringify(dataUser);
 
     tr.innerHTML = `
-      <td><img src=${dataUser.photo} class="img-circle img-sm"></td>
-      <td>${dataUser.name}</td>
-      <td>${dataUser.email}</td>
-      <td>${dataUser.admin ? "Sim" : "Não"}</td>
-      <td>${Utils.dateFormat(dataUser.register)}</td>
-      <td>
-          <button type="button" class="btn btn-primary btn-edit btn-xs btn-flat">Editar</button>
-          <button type="button" class="btn btn-danger btn-delete btn-xs btn-flat">Excluir</button>
-      </td>
-  `;
+          <td><img src="${
+            dataUser.photo
+          }" alt="User Image" class="img-circle img-sm"></td>
+          <td>${dataUser.name}</td>
+          <td>${dataUser.email}</td>
+          <td>${dataUser.admin ? "Sim" : "Não"}</td>
+          <td>${Utils.dateFormat(dataUser.register)}</td>
+          <td>
+              <button type="button" class="btn btn-primary btn-edit btn-xs btn-flat">Editar</button>
+              <button type="button" class="btn btn-danger btn-delete btn-xs btn-flat">Excluir</button>
+          </td>
+      `;
 
     this.addEventsTr(tr);
 
@@ -224,7 +209,13 @@ class UserController {
 
   addEventsTr(tr) {
     tr.querySelector(".btn-delete").addEventListener("click", (e) => {
-      if (confirm("Deseja relamente excluir?")) {
+      if (confirm("Deseja realmente excluir?")) {
+        let user = new User();
+
+        user.loadFromJSON(JSON.parse(tr.dataset.user));
+
+        user.remove();
+
         tr.remove();
 
         this.updateCount();
@@ -261,8 +252,6 @@ class UserController {
             default:
               field.value = json[name];
           }
-
-          field.value = json[name];
         }
       }
 
